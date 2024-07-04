@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Webinars</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('{{ url_for('static', filename='background.jpg') }}') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: #000;
+            overflow: auto;
+        }
+
+        h1, p {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #000;
+        }
+
+        button[type="submit"] {
+            padding: 10px 20px;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: rgba(0, 123, 255, 0.9);
+        }
+
+        button[type="submit"]:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        th, td {
+            border: 1px solid rgb(0, 0, 0);
+            padding: 8px;
+            text-align: left;
+            color: #000;
+            word-wrap: break-word;
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .offline-notification {
+            display: none;
+            background-color: red;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        /* Progress bar styling */
+        .progress-bar {
+            display: none;
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .progress-bar-fill {
+            height: 20px;
+            background-color: rgba(0, 123, 255, 0.8);
+            border-radius: 20px;
+            width: 0;
+            transition: width 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-notification" id="offline-notification">
+        You are currently offline. Some functionalities may not be available.
+    </div>
+    <div class="container">
+        <h1>Find Webinars</h1>
+        <p>Find webinar for:</p>
+        <form id="search-form" method="post" action="">
+            <input type="text" name="query" placeholder="Enter keywords" value="{{ search_query }}" required>
+            <button type="submit" id="search-button">Search</button>
+        </form>
+
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        </div>
+
+        {% if no_links_found %}
+            <p>No links found!!</p>
+        {% elif webinar_links %}
+            <h2>Webinar link(s)</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for link in webinar_links %}
+                            <tr>
+                                <td>{{ link['title'] }}</td>
+                                <td><a href="{{ link['link'] }}" target="_blank">{{ link['link'] }}</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function updateOnlineStatus() {
+            const notification = document.getElementById('offline-notification');
+            const searchButton = document.getElementById('search-button');
+            if (navigator.onLine) {
+                notification.style.display = 'none';
+                searchButton.disabled = false;
+            } else {
+                notification.style.display = 'block';
+                searchButton.disabled = true;
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        // Initial check
+        updateOnlineStatus();
+
+        // Function to increment progress bar
+        function incrementProgressBar() {
+            const progressBarFill = document.getElementById('progress-bar-fill');
+            let width = 0;
+
+            const interval = setInterval(() => {
+                if (width >= 90) {
+                    clearInterval(interval);
+                } else {
+                    width += 1;
+                    progressBarFill.style.width = width + '%';
+                }
+            }, 100);
+        }
+
+        // Handle form submission
+        document.getElementById('search-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const progressBar = document.getElementById('progress-bar');
+            const progressBarFill = document.getElementById('progress-bar-fill');
+            const searchForm = document.getElementById('search-form');
+            const formData = new FormData(searchForm);
+
+            progressBar.style.display = 'block';
+            progressBarFill.style.width = '0%';
+
+            incrementProgressBar();
+
+            const response = await fetch(searchForm.action, {
+                method: searchForm.method,
+                body: formData
+            });
+
+            if (response.ok) {
+                const resultHtml = await response.text();
+                document.open();
+                document.write(resultHtml);
+                document.close();
+            } else {
+                alert('Search failed. Please try again.');
+                progressBar.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
