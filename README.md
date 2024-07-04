@@ -119,6 +119,12 @@ This application uses SerpAPI to enhance the search functionality. Follow these 
         return response.json()
     ```
 
+Screenshots:
+
+(image1.png)
+
+(image2.png)
+
 ## Contributing
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss any changes or improvements.
