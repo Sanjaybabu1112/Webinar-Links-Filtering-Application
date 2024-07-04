@@ -121,9 +121,9 @@ This application uses SerpAPI to enhance the search functionality. Follow these 
 
 Screenshots:
 
-(image1.png)
+![Webinar](image1.png)
 
-(image2.png)
+![Webinar](image2.png)
 
 ## Contributing
 
